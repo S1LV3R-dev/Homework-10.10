@@ -1,72 +1,72 @@
-#include <bits/stdc++.h>
+﻿#include<bits/stdc++.h>
 using namespace std;
 
-unsigned char b64char(char a) {
-    if (a >= 'A' && a <= 'Z')return a - 'A';
-    if (a >= 'a' && a <= 'z')return a - 'a' + 26;
-    if (a >= '0' && a <= '9')return a - '0' + 52;
-    if (a == '+')return 62;
-    if (a == '/')return 63;
-    return 64;
+static const std::string base64_chars =
+             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+             "abcdefghijklmnopqrstuvwxyz"
+             "0123456789+/";
+
+static inline bool is_base64(unsigned char c) {
+  return (isalnum(c) || (c == '+') || (c == '/'));
 }
-int decode(char* instr, int sz, char* outstr) {
-    unsigned char b1, b2, b3, b4;
-    char a1, a2, a3;
-    int j = 0, k = 0;
-    for (int i=0;i<sz;i+=4) {
-        b1=b64char(instr[i]),
-        b2=b64char(instr[i + 1]),
-        b3=b64char(instr[i + 2]),
-        b4=b64char(instr[i + 3]);
-        if (b3 == 64)
-            b3 = 0,
-            b4 = 0,
-            k = 2;
-        if(b4 == 64)
-            b4 = 0,
-            k = 1;
-        a1 = (b1 << 2) | (b2 >> 4);
-        a2 = (b2 << 4) | (b3 >> 2);
-        a3 = (b3 << 6) | b4;
-        outstr[j++]=a1;
-        outstr[j++]=a2;
-        outstr[j++]=a3;
+
+string base64_decode(string const& encoded_string) {
+  int in_len = encoded_string.size();
+  int i = 0;
+  int j = 0;
+  int in_ = 0;
+  unsigned char char_array_4[4], char_array_3[3];
+  string ret;
+
+  while (in_len-- && ( encoded_string[in_] != '=') && is_base64(encoded_string[in_])) {
+    char_array_4[i++] = encoded_string[in_]; in_++;
+    if (i ==4) {
+      for (i = 0; i <4; i++)
+        char_array_4[i] = base64_chars.find(char_array_4[i]);
+
+      char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+      char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+      char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+      for (i = 0; (i < 3); i++)
+        ret += char_array_3[i];
+      i = 0;
     }
-    return j-k;
+  }
+
+  if (i) {
+    for (j = i; j <4; j++)
+      char_array_4[j] = 0;
+
+    for (j = 0; j <4; j++)
+      char_array_4[j] = base64_chars.find(char_array_4[j]);
+
+    char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+    char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+    char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+    for (j = 0; (j < i - 1); j++) ret += char_array_3[j];
+  }
+
+  return ret;
 }
 int main(){
-    char infname[1024];
-    char outfname[1024];
-    cout << "Input source file name: ";
-    cin.getline(infname,1024);
-    ifstream fin(infname);
-    if(!fin.is_open()) {
-        cout<<"Can not open the file "<<infname<<endl;
-        return 1;
-    }
+    string ifname, ofname, s;
     cout << "Input file name: ";
-    cin.getline(outfname, 1024);
-
-    ofstream fout(outfname);
-    if (!fout){
-        fin.close();
-        cout << "Can not write to this file " << outfname << endl;
-        return 2;
+    cin >> ifname;
+    cout << "Output file name: ";
+    cin >> ofname;
+    ifstream fin(ifname);
+    ofstream fout(ofname);
+    if (!fin.is_open()){
+    	cout << "Can't open this file\n";
+    	return 1;
     }
-    char inStr[4*19], outStr[3*19];
-    while (fin.peek() != EOF) {
-        int s=0;
-        for (int i=0; i<4*19&&fin.peek()!=EOF;++i){
-            char k = fin.get();
-            if (k>='A'&&k<='Z'||k>='a'&&k<='z'||k>='0'&&k<='9'||k=='+'||k=='/'||k=='=') {
-              inStr[i]=k;
-              ++s;
-            }
+    else{
+        string str;
+        while(getline(fin,str)){
+            s+=str;
         }
-        
-        s = decode(inStr, s, outStr);
-        fout.write(outStr, s);
     }
-    fin.close();
-    fout.close();
+    fout << base64_decode(s);
 }
